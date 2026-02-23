@@ -1,0 +1,411 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  HIRING_MANAGER
+  COLLEGE
+  CANDIDATE
+}
+
+enum InterviewStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+enum PlanTier {
+  ESSENTIAL
+  BUSINESS
+  ENTERPRISE
+  LITE
+  PRO
+  ELITE
+}
+
+enum Currency {
+  USD
+  INR
+}
+
+enum PackStatus {
+  ACTIVE
+  EXHAUSTED
+  EXPIRED
+  REFUNDED
+}
+
+enum UsageType {
+  TECHNICAL
+  HR
+  BEHAVIORAL
+  GENERAL
+  APTITUDE
+  CODING
+}
+
+// ─── User & Organization ────────────────────────────────
+
+model Organization {
+  id               String   @id @default(uuid())
+  name             String
+  type             String   // "company" | "college"
+  domain           String?  @unique
+  /** EEO-safe mode: do not ask about protected characteristics (age, race, religion, etc.) */
+  eeoSafeMode      Boolean  @default(true)
+  /** Topics the AI must never ask about (e.g. "religion", "political affiliation"). Stored as JSON array. */
+  doNotAskTopics   Json?    // string[]
+  /** Toxicity/harassment: terminate session on first high-severity detection */
+  toxicityTerminateOnHigh Boolean @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  users     User[]
+  templates InterviewTemplate[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String
+  name               String
+  role               Role      @default(CANDIDATE)
+  organizationId     String?
+  organization       Organization? @relation(fields: [organizationId], references: [id])
+  isActive           Boolean   @default(true)
+  emailVerified      Boolean   @default(false)
+  avatarUrl          String?
+  collegeRollNumber  String?   // Required for students (CANDIDATE) when purchasing INR plans
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  lastLoginAt        DateTime?
+
+  settings           UserSettings?
+  refreshTokens      RefreshToken[]
+  interviews         Interview[]          @relation("CandidateInterviews")
+  createdTemplates   InterviewTemplate[]  @relation("TemplateCreator")
+  aptitudeTests      AptitudeTest[]
+  codingTests        CodingTest[]
+  assignedTests      TestAssignment[]     @relation("AssignedCandidate")
+  createdAssignments TestAssignment[]     @relation("AssignmentCreator")
+  creditPacks        CreditPack[]
+  usageLogs          UsageLog[]
+  errorLogs          ErrorLog[]
+
+  @@index([organizationId])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model UserSettings {
+  id                   String  @id @default(uuid())
+  userId               String  @unique
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultQuestionCount Int     @default(10)
+  defaultDifficulty    String  @default("Medium")
+  theme                String  @default("dark")
+  notifications        Boolean @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+// ─── Interview ──────────────────────────────────────────
+
+model InterviewTemplate {
+  id             String   @id @default(uuid())
+  creatorId      String
+  creator        User     @relation("TemplateCreator", fields: [creatorId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  name           String
+  aiBehavior     String
+  customerWants  String
+  candidateOffers String
+  isPublic       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  interviews Interview[]
+
+  @@index([creatorId])
+  @@index([organizationId])
+  @@map("interview_templates")
+}
+
+model Interview {
+  id              String          @id @default(uuid())
+  candidateId     String
+  candidate       User            @relation("CandidateInterviews", fields: [candidateId], references: [id])
+  templateId      String
+  template        InterviewTemplate @relation(fields: [templateId], references: [id])
+  interviewType   String?         // TECHNICAL | HR | BEHAVIORAL | GENERAL (for credit tracking)
+  status          InterviewStatus @default(PENDING)
+  transcript      Json?
+  videoUrl        String?
+  report          Json?
+  scoring         Json?
+  proctoringFlags Json?
+  riskScore       Float?
+  /** Guardrail violations: prompt injection, toxicity, etc. */
+  guardrailFlags  Json?
+  /** Set when session was terminated due to toxicity or jailbreak */
+  terminatedByGuardrails Boolean @default(false)
+  duration        Int?
+  overallScore    Float?
+  recommendation  String?
+  createdAt       DateTime        @default(now())
+  completedAt     DateTime?
+  updatedAt       DateTime        @updatedAt
+
+  @@index([candidateId])
+  @@index([templateId])
+  @@index([status])
+  @@map("interviews")
+}
+
+// ─── Aptitude ───────────────────────────────────────────
+
+model AptitudeTest {
+  id          String    @id @default(uuid())
+  candidateId String
+  candidate   User      @relation(fields: [candidateId], references: [id])
+  topic       String
+  difficulty  String
+  quiz        Json
+  answers     Json?
+  score       Int?
+  total       Int
+  percentage  Float?
+  passed      Boolean?
+  timeSpent   Int?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([candidateId])
+  @@map("aptitude_tests")
+}
+
+// ─── Coding ─────────────────────────────────────────────
+
+model CodingTest {
+  id          String    @id @default(uuid())
+  candidateId String
+  candidate   User      @relation(fields: [candidateId], references: [id])
+  topic       String
+  language    String
+  difficulty  String
+  problem     Json
+  userCode    String?
+  evaluation  Json?
+  score       Float?
+  verdict     String?
+  timeSpent   Int?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([candidateId])
+  @@map("coding_tests")
+}
+
+// ─── Assignments ────────────────────────────────────────
+
+model TestAssignment {
+  id          String           @id @default(uuid())
+  type        String           // "interview" | "aptitude" | "coding"
+  creatorId   String
+  creator     User             @relation("AssignmentCreator", fields: [creatorId], references: [id])
+  candidateId String
+  candidate   User             @relation("AssignedCandidate", fields: [candidateId], references: [id])
+  config      Json
+  deadline    DateTime?
+  status      AssignmentStatus @default(PENDING)
+  resultId    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([creatorId])
+  @@index([candidateId])
+  @@index([status])
+  @@map("test_assignments")
+}
+
+// ─── Billing & Credits ───────────────────────────────────
+
+model CreditPack {
+  id                 String     @id @default(uuid())
+  userId             String
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               PlanTier
+  currency           Currency
+
+  technicalCredits   Int        @default(0)
+  hrCredits          Int        @default(0)
+  behavioralCredits  Int        @default(0)
+  generalCredits     Int        @default(0)
+  usedTechnical      Int        @default(0)
+  usedHr             Int        @default(0)
+  usedBehavioral     Int        @default(0)
+  usedGeneral        Int        @default(0)
+
+  aptitudeCredits    Int        @default(0)
+  codingCredits      Int        @default(0)
+  usedAptitude       Int        @default(0)
+  usedCoding         Int        @default(0)
+
+  amountPaid         Int        // cents or paise
+  purchasedAt        DateTime   @default(now())
+  expiresAt          DateTime
+  stripePaymentId    String?
+  razorpayPaymentId  String?
+  razorpayOrderId    String?
+  status             PackStatus @default(ACTIVE)
+  createdAt          DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  usageLogs          UsageLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("credit_packs")
+}
+
+model UsageLog {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditPackId String
+  creditPack   CreditPack @relation(fields: [creditPackId], references: [id], onDelete: Cascade)
+  type         UsageType
+  referenceId  String?    // interview / aptitude / coding test id
+  createdAt    DateTime   @default(now())
+
+  @@index([userId])
+  @@index([creditPackId])
+  @@index([type])
+  @@map("usage_logs")
+}
+
+// ─── Coding Questions (LeetCode-style) & Companies ────────
+
+model CodingQuestion {
+  id                String   @id @default(uuid())
+  leetcodeId        Int      @unique  // from CSV id
+  questionFrontendId Int?
+  title             String
+  titleSlug         String   @unique
+  translatedTitle   String?
+  difficulty        String   // EASY | MEDIUM | HARD
+  paidOnly          Boolean  @default(false)
+  status            String?
+  frequency         Float?
+  acRate            Float?
+  contestPoint      Float?
+  topicTags         String?  // "Array; Hash Table"
+  topicSlugs        String?  // "array; hash-table"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companies         CodingQuestionCompany[]
+
+  @@index([difficulty])
+  @@index([titleSlug])
+  @@map("coding_questions")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  country   String   // US | INDIA
+  type      String   // TOP_AMERICA | TOP_INDIA_IT
+  createdAt DateTime @default(now())
+
+  questions CodingQuestionCompany[]
+
+  @@unique([name, country])
+  @@index([country])
+  @@index([type])
+  @@map("companies")
+}
+
+model CodingQuestionCompany {
+  questionId String
+  question   CodingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, companyId])
+  @@index([companyId])
+  @@map("coding_question_companies")
+}
+
+// ─── Audit ──────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─── Error log (track user-facing errors for admins) ────
+
+model ErrorLog {
+  id        String   @id @default(uuid())
+  userId    String?  // null if unauthenticated when error occurred
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName  String?  // display name at log time (when user relation missing or for quick display)
+  message   String   // short error message
+  details   String?  // full details / stack / context
+  source    String?  // e.g. "voice_chat", "gemini", "aptitude"
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([source])
+  @@index([createdAt])
+  @@map("error_logs")
+}

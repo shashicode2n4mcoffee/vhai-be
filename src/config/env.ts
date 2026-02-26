@@ -36,6 +36,14 @@ const envSchema = z.object({
   LIVEKIT_URL: z.string().url().optional(),
   LIVEKIT_API_KEY: z.string().optional(),
   LIVEKIT_API_SECRET: z.string().optional(),
+  /** Enable LiveKit webhooks (room_finished, egress_ended). Requires LIVEKIT_* to be set. */
+  LIVEKIT_WEBHOOKS_ENABLED: z.string().optional().transform((v) => v === "true" || v === "1"),
+  /** GCS bucket for Egress (e.g. my-bucket). Optional; cloud recording only if set and user has cloudRecordingEnabled. */
+  LIVEKIT_EGRESS_GCS_BUCKET: z.string().optional(),
+  /** GCS credentials JSON string or path. Optional when running on GCP (default credentials). */
+  LIVEKIT_EGRESS_GCS_CREDENTIALS: z.string().optional(),
+  /** Agent name to dispatch when livekitAgentEnabled (e.g. interview-voice-agent). */
+  LIVEKIT_AGENT_NAME: z.string().optional(),
 });
 
 /** Write env validation failure to stderr (Winston not yet available; stderr is captured by log aggregators). */

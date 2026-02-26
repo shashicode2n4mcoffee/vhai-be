@@ -1,0 +1,1 @@
+-- No schema change (interview mode handled elsewhere)

@@ -16,6 +16,7 @@ import { requestTimeoutMiddleware } from "./middleware/requestTimeout.js";
 import swaggerUi from "swagger-ui-express";
 import routes from "./routes/index.js";
 import { openApiSpec } from "./openapi.js";
+import * as webhooksCtrl from "./controllers/webhooks.controller.js";
 
 const app = express();
 
@@ -30,6 +31,12 @@ app.use(cors({
 }));
 
 // ── Body & Cookies ───────────────────────────────────────
+// LiveKit webhook needs raw body for signature verification (must be before json)
+app.use(
+  "/api/webhooks/livekit",
+  express.raw({ type: "application/json", limit: "100kb" }),
+  webhooksCtrl.livekitWebhook
+);
 // Larger limits only for routes that need them (order matters: specific before default)
 app.use("/api/interviews", express.json({ limit: "10mb" }), express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/api/errors", express.json({ limit: "2mb" }), express.urlencoded({ extended: true, limit: "2mb" }));

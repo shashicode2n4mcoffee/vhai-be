@@ -8,5 +8,6 @@ const router = Router();
 
 router.get("/config", authenticate, generalLimiter, asyncHandler(livekitCtrl.getConfig));
 router.post("/token", authenticate, generalLimiter, asyncHandler(livekitCtrl.getToken));
+router.post("/quality", authenticate, generalLimiter, asyncHandler(livekitCtrl.reportQuality));
 
 export default router;

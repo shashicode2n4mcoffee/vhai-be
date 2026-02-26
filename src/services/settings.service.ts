@@ -30,13 +30,18 @@ export async function updateSettings(userId: string, input: UpdateSettingsInput)
     }
   }
 
-  // Upsert: create if doesn't exist, update if it does
+  // Only pass defined keys so Prisma doesn't receive undefined
+  const updateData = Object.fromEntries(
+    Object.entries(input).filter(([, v]) => v !== undefined)
+  ) as UpdateSettingsInput;
+
+  if (Object.keys(updateData).length === 0) {
+    return prisma.userSettings.findUniqueOrThrow({ where: { userId } });
+  }
+
   return prisma.userSettings.upsert({
     where: { userId },
-    create: {
-      userId,
-      ...input,
-    },
-    update: input,
+    create: { userId, ...updateData },
+    update: updateData,
   });
 }

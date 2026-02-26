@@ -138,6 +138,16 @@ model UserSettings {
   theme                 String   @default("dark")
   notifications         Boolean  @default(true)
   cloudRecordingEnabled Boolean  @default(false) // Business plan only: store interview recording in cloud (LiveKit Egress)
+  // LiveKit feature toggles (P0–P3) — all default off except simulcast and room metadata
+  livekitRoomMetadataEnabled Boolean @default(true)  // P1: set room metadata (interviewId, templateId)
+  livekitDataChannelEnabled  Boolean @default(false) // P2: send transcript/signals over data channel
+  livekitAnalyticsEnabled    Boolean @default(false) // P2: send connection quality samples to backend
+  livekitSimulcastEnabled    Boolean @default(true)  // P3: adaptive video (simulcast layers)
+  livekitE2EEEnabled        Boolean @default(false) // P3: end-to-end encryption for room
+  // Later: observer tokens, screen share, cloud agent
+  livekitObserverTokenAllowed Boolean @default(false) // HR view-only: allow observer token for rooms
+  livekitScreenShareEnabled   Boolean @default(false) // Publish screen track for technical interviews
+  livekitAgentEnabled         Boolean @default(false) // Dispatch LiveKit Agent to room (requires LIVEKIT_AGENT_NAME)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -188,6 +198,8 @@ model Interview {
   duration        Int?
   overallScore    Float?
   recommendation  String?
+  /** Cloud recording URL from LiveKit Egress (when cloudRecordingEnabled); set by webhook */
+  cloudRecordingUrl String?
   createdAt       DateTime        @default(now())
   completedAt     DateTime?
   updatedAt       DateTime        @updatedAt

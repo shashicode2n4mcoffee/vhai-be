@@ -18,6 +18,7 @@ import pricingRoutes from "./pricing.routes.js";
 import creditsRoutes from "./credits.routes.js";
 import codingQuestionsRoutes from "./coding-questions.routes.js";
 import errorsRoutes from "./errors.routes.js";
+import livekitRoutes from "./livekit.routes.js";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use("/assignments", assignmentsRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/organizations", organizationsRoutes);
 router.use("/analytics", analyticsRoutes);
+router.use("/livekit", livekitRoutes);
 
 export default router;

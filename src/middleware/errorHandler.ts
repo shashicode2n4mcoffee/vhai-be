@@ -33,15 +33,16 @@ export function errorHandler(
   // Determine status code
   const statusCode = err instanceof AppError ? err.statusCode : 500;
 
-  // Build response
+  // Build response — standard shape: { error } plus optional reserved fields (upgradeUrl, requestId, stack in dev)
   const response: Record<string, unknown> = {
     error: err instanceof AppError ? err.message : "Internal server error",
   };
   if (statusCode === 402) {
     response.upgradeUrl = "/pricing";
   }
-
-  // Include stack trace in development
+  if (req.requestId) {
+    response.requestId = req.requestId;
+  }
   if (env.NODE_ENV === "development" && !(err instanceof AppError)) {
     response.stack = err.stack;
   }

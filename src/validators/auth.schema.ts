@@ -13,8 +13,9 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+/** Body optional when refresh token is sent via httpOnly cookie */
 export const refreshSchema = z.object({
-  refreshToken: z.string().min(1, "Refresh token is required"),
+  refreshToken: z.string().optional(),
 });
 
 export const forgotPasswordSchema = z.object({

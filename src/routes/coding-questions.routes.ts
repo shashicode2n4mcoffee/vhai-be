@@ -4,11 +4,12 @@
 
 import { Router } from "express";
 import * as ctrl from "../controllers/coding-questions.controller.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 
 const router = Router();
 
-router.get("/", ctrl.listQuestions);
-router.get("/companies", ctrl.listCompanies);
-router.get("/:id", ctrl.getQuestion);
+router.get("/", asyncHandler(ctrl.listQuestions));
+router.get("/companies", asyncHandler(ctrl.listCompanies));
+router.get("/:id", asyncHandler(ctrl.getQuestion));
 
 export default router;

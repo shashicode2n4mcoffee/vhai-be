@@ -23,7 +23,7 @@ async function main() {
   app.listen(env.PORT, () => {
     logger.info(`Server running on port ${env.PORT} (${env.NODE_ENV})`);
     logger.info(`Frontend URL: ${env.FRONTEND_URL}`);
-    logger.info(`API Base: http://localhost:${env.PORT}/api`);
+    logger.info(`API: path /api, port ${env.PORT}`);
   });
 
   // Graceful shutdown

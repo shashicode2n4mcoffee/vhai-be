@@ -1,0 +1,29 @@
+# Dependencies and build output (rebuilt in image)
+node_modules
+dist
+npm-debug.log*
+
+# Environment and secrets (inject at runtime via Secret Manager / env)
+.env
+.env.*
+!.env.example
+
+# Git and IDE
+.git
+.gitignore
+.dockerignore
+*.md
+
+# Logs and local data
+logs
+*.log
+.DS_Store
+
+# Test and tooling
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+playwright
+automation-scripts

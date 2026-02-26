@@ -130,15 +130,16 @@ model RefreshToken {
 }
 
 model UserSettings {
-  id                   String  @id @default(uuid())
-  userId               String  @unique
-  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  defaultQuestionCount Int     @default(10)
-  defaultDifficulty    String  @default("Medium")
-  theme                String  @default("dark")
-  notifications        Boolean @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultQuestionCount  Int      @default(10)
+  defaultDifficulty     String   @default("Medium")
+  theme                 String   @default("dark")
+  notifications         Boolean  @default(true)
+  cloudRecordingEnabled Boolean  @default(false) // Business plan only: store interview recording in cloud (LiveKit Egress)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@map("user_settings")
 }

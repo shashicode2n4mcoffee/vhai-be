@@ -14,6 +14,8 @@ export interface CreditBalance {
   general: number;
   aptitude: number;
   coding: number;
+  /** True if user has at least one ACTIVE pack with plan BUSINESS (for Settings: cloud recording option) */
+  hasBusinessPlan: boolean;
 }
 
 export async function getBalance(userId: string): Promise<CreditBalance> {
@@ -33,6 +35,7 @@ export async function getBalance(userId: string): Promise<CreditBalance> {
     general: 0,
     aptitude: 0,
     coding: 0,
+    hasBusinessPlan: packs.some((p) => p.plan === "BUSINESS"),
   };
 
   for (const p of packs) {

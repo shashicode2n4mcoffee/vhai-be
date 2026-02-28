@@ -112,16 +112,20 @@ export async function updateAptitudeTest(
     throw new ForbiddenError("You can only update your own tests");
   }
 
+  const data: Record<string, unknown> = {
+    answers: input.answers,
+    score: input.score,
+    percentage: input.percentage,
+    passed: input.passed,
+    timeSpent: input.timeSpent,
+    completedAt: new Date(),
+  };
+  if (input.proctoringFlags !== undefined) data.proctoringFlags = input.proctoringFlags as any;
+  if (input.riskScore !== undefined) data.riskScore = input.riskScore;
+
   return prisma.aptitudeTest.update({
     where: { id },
-    data: {
-      answers: input.answers as any,
-      score: input.score,
-      percentage: input.percentage,
-      passed: input.passed,
-      timeSpent: input.timeSpent,
-      completedAt: new Date(),
-    },
+    data,
   });
 }
 

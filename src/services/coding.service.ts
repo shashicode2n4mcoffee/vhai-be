@@ -3,7 +3,7 @@
  */
 
 import { prisma } from "../config/database.js";
-import { NotFoundError, ForbiddenError } from "../utils/errors.js";
+import { NotFoundError, ForbiddenError, BadRequestError } from "../utils/errors.js";
 import type { Role } from "@prisma/client";
 import { parsePagination, buildPaginatedResult } from "../utils/pagination.js";
 import type { CreateCodingInput, UpdateCodingInput } from "../validators/coding.schema.js";
@@ -101,6 +101,8 @@ export async function getCodingTestById(
   return test;
 }
 
+const MAX_SUBMISSIONS = 3;
+
 export async function updateCodingTest(
   id: string,
   userId: string,
@@ -112,16 +114,33 @@ export async function updateCodingTest(
     throw new ForbiddenError("You can only update your own tests");
   }
 
+  const isSubmission = input.evaluation != null && input.userCode != null;
+  if (isSubmission) {
+    const currentCount = (test.submissionCount ?? 0);
+    if (currentCount >= MAX_SUBMISSIONS) {
+      throw new BadRequestError(
+        `Maximum ${MAX_SUBMISSIONS} submissions allowed for this coding test. You have already used all attempts.`,
+      );
+    }
+  }
+
+  const data: Record<string, unknown> = {
+    userCode: input.userCode,
+    evaluation: input.evaluation,
+    score: input.score,
+    verdict: input.verdict,
+    timeSpent: input.timeSpent,
+    completedAt: new Date(),
+  };
+  if (input.proctoringFlags !== undefined) data.proctoringFlags = input.proctoringFlags as any;
+  if (input.riskScore !== undefined) data.riskScore = input.riskScore;
+  if (isSubmission) {
+    data.submissionCount = (test.submissionCount ?? 0) + 1;
+  }
+
   return prisma.codingTest.update({
     where: { id },
-    data: {
-      userCode: input.userCode,
-      evaluation: input.evaluation as any,
-      score: input.score,
-      verdict: input.verdict,
-      timeSpent: input.timeSpent,
-      completedAt: new Date(),
-    },
+    data,
   });
 }
 

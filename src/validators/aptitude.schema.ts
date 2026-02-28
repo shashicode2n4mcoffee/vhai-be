@@ -22,6 +22,8 @@ export const updateAptitudeSchema = z.object({
   percentage: z.number().min(0).max(100).optional(),
   passed: z.boolean().optional(),
   timeSpent: z.number().int().min(0).optional(),
+  proctoringFlags: z.array(z.record(z.unknown())).optional(),
+  riskScore: z.number().min(0).max(100).optional(),
 });
 
 export const aptitudeIdParamSchema = z.object({

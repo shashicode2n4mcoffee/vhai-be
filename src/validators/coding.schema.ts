@@ -30,6 +30,8 @@ export const updateCodingSchema = z.object({
   score: z.number().min(0).max(100).optional(),
   verdict: z.string().max(50).optional(),
   timeSpent: z.number().int().min(0).optional(),
+  proctoringFlags: z.array(z.record(z.unknown())).optional(),
+  riskScore: z.number().min(0).max(100).optional(),
 });
 
 export const codingIdParamSchema = z.object({

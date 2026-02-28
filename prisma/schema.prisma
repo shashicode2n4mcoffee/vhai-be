@@ -213,20 +213,22 @@ model Interview {
 // ─── Aptitude ───────────────────────────────────────────
 
 model AptitudeTest {
-  id          String    @id @default(uuid())
-  candidateId String
-  candidate   User      @relation(fields: [candidateId], references: [id])
-  topic       String
-  difficulty  String
-  quiz        Json
-  answers     Json?
-  score       Int?
-  total       Int
-  percentage  Float?
-  passed      Boolean?
-  timeSpent   Int?
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
+  id               String    @id @default(uuid())
+  candidateId      String
+  candidate        User      @relation(fields: [candidateId], references: [id])
+  topic            String
+  difficulty        String
+  quiz             Json
+  answers          Json?
+  score            Int?
+  total            Int
+  percentage       Float?
+  passed           Boolean?
+  timeSpent        Int?
+  proctoringFlags  Json?
+  riskScore        Float?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
 
   @@index([candidateId])
   @@map("aptitude_tests")
@@ -235,20 +237,23 @@ model AptitudeTest {
 // ─── Coding ─────────────────────────────────────────────
 
 model CodingTest {
-  id          String    @id @default(uuid())
-  candidateId String
-  candidate   User      @relation(fields: [candidateId], references: [id])
-  topic       String
-  language    String
-  difficulty  String
-  problem     Json
-  userCode    String?
-  evaluation  Json?
-  score       Float?
-  verdict     String?
-  timeSpent   Int?
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
+  id               String    @id @default(uuid())
+  candidateId      String
+  candidate        User      @relation(fields: [candidateId], references: [id])
+  topic            String
+  language         String
+  difficulty       String
+  problem          Json
+  userCode         String?
+  evaluation       Json?
+  score            Float?
+  verdict          String?
+  timeSpent        Int?
+  proctoringFlags  Json?
+  riskScore        Float?
+  submissionCount  Int       @default(0)  // Max 3 submissions per test (proctoring)
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
 
   @@index([candidateId])
   @@map("coding_tests")

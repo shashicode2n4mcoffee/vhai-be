@@ -3,6 +3,8 @@ import { z } from "zod";
 export const createInterviewSchema = z.object({
   templateId: z.string().uuid("Invalid template ID"),
   interviewType: z.enum(["TECHNICAL", "HR", "BEHAVIORAL", "GENERAL"]).optional(),
+  /** When true (full interview flow), do not check or deduct interview credits. */
+  fromFullFlow: z.boolean().optional(),
 });
 
 export const updateInterviewSchema = z.object({

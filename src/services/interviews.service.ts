@@ -17,11 +17,14 @@ type InterviewType = (typeof INTERVIEW_TYPE)[number];
 export async function createInterview(candidateId: string, input: CreateInterviewInput) {
   const interviewType: InterviewType = (input.interviewType ?? "GENERAL") as InterviewType;
 
-  const hasCredit = await creditsService.hasInterviewCredit(candidateId, interviewType);
-  if (!hasCredit) {
-    throw new (await import("../utils/errors.js")).PaymentRequiredError(
-      `No ${interviewType.toLowerCase()} interview credits. Purchase more at /pricing`,
-    );
+  const skipInterviewCredits = input.fromFullFlow === true;
+  if (!skipInterviewCredits) {
+    const hasCredit = await creditsService.hasInterviewCredit(candidateId, interviewType);
+    if (!hasCredit) {
+      throw new (await import("../utils/errors.js")).PaymentRequiredError(
+        `No ${interviewType.toLowerCase()} interview credits. Purchase more at /pricing`,
+      );
+    }
   }
 
   const template = await prisma.interviewTemplate.findUnique({
@@ -30,7 +33,9 @@ export async function createInterview(candidateId: string, input: CreateIntervie
   });
   if (!template) throw new NotFoundError("Template not found");
 
-  await creditsService.deductCredit(candidateId, interviewType);
+  if (!skipInterviewCredits) {
+    await creditsService.deductCredit(candidateId, interviewType);
+  }
 
   const interview = await prisma.interview.create({
     data: {

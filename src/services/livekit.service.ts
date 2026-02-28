@@ -140,6 +140,7 @@ export async function createRoomAndToken(opts: CreateRoomAndTokenOptions): Promi
   token: string;
   url: string;
   roomName: string;
+  agentDispatched: boolean;
 }> {
   if (!isLiveKitConfigured()) {
     throw new Error("LiveKit is not configured.");
@@ -213,5 +214,5 @@ export async function createRoomAndToken(opts: CreateRoomAndTokenOptions): Promi
     participantName: opts.participantName ?? "Candidate",
   });
 
-  return { token, url, roomName };
+  return { token, url, roomName, agentDispatched: shouldDispatchAgent };
 }

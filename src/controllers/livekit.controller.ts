@@ -58,14 +58,14 @@ export async function getToken(req: Request, res: Response, next: NextFunction) 
     }
 
     if (interviewId && templateId) {
-      const { token, url, roomName } = await livekitService.createRoomAndToken({
+      const { token, url, roomName, agentDispatched } = await livekitService.createRoomAndToken({
         interviewId,
         templateId,
         userId,
         participantName,
       });
-      await logAudit(req, { action: "LIVEKIT_TOKEN_FETCH", resource: "livekit", details: { roomName, interviewId } });
-      res.json({ token, url, roomName, interviewId });
+      await logAudit(req, { action: "LIVEKIT_TOKEN_FETCH", resource: "livekit", details: { roomName, interviewId, agentDispatched } });
+      res.json({ token, url, roomName, interviewId, agentDispatched });
       return;
     }
 

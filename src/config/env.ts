@@ -20,6 +20,11 @@ const envSchema = z.object({
   GEMINI_REPORT_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_TOKEN_TTL: z.coerce.number().default(300),
 
+  /** DeepSeek (aptitude, coding, final report) — optional; frontend may use VITE_DEEPSEEK_API_KEY */
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_MODEL: z.string().default("deepseek-chat"),
+  DEEPSEEK_TOKEN_TTL: z.coerce.number().default(300),
+
   /** Comma-separated origins for CORS (e.g. production: "https://app.web.app,https://app.com") */
   FRONTEND_URL: z.string().default("http://localhost:5173"),
 

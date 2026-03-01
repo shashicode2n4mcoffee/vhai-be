@@ -35,6 +35,15 @@ export const geminiLimiter = rateLimit({
   message: { error: "Gemini token rate limit exceeded. Please try again later." },
 });
 
+/** DeepSeek token — same as Gemini for aptitude/coding/report */
+export const deepseekLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "DeepSeek token rate limit exceeded. Please try again later." },
+});
+
 /** Signup limiter — 5 per hour per IP (relaxed in test for E2E) */
 export const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

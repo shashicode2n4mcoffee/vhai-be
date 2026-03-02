@@ -23,13 +23,17 @@ const prodFormat = combine(
   winston.format.json(),
 );
 
+// In production (e.g. Cloud Run) use console only; filesystem may be read-only or unwritable.
+const useFileTransport =
+  env.NODE_ENV === "production" && process.env.LOG_TO_FILE === "true";
+
 export const logger = winston.createLogger({
   level: env.NODE_ENV === "development" ? "debug" : "info",
   format: env.NODE_ENV === "production" ? prodFormat : devFormat,
   defaultMeta: { service: "vocalhireai" },
   transports: [
     new winston.transports.Console(),
-    ...(env.NODE_ENV === "production"
+    ...(useFileTransport
       ? [
           new winston.transports.File({ filename: "logs/error.log", level: "error" }),
           new winston.transports.File({ filename: "logs/combined.log" }),

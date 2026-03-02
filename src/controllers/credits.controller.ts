@@ -47,7 +47,8 @@ export async function purchase(req: Request, res: Response, next: NextFunction) 
     const key = plan as PlanTierKey;
     const config = PLAN_CONFIG[key];
     if (!config) {
-      return res.status(400).json({ error: "Invalid plan" });
+      res.status(400).json({ error: "Invalid plan" });
+      return;
     }
 
     const isInr = config.currency === "INR";
@@ -64,21 +65,23 @@ export async function purchase(req: Request, res: Response, next: NextFunction) 
         undefined,
         quantity,
       );
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
         packId: pack.id,
         message: "Pack created (simulated). In production, use Stripe or Razorpay.",
       });
+      return;
     }
 
     if (isInr) {
-      return res.status(501).json({
+      res.status(501).json({
         error: "Razorpay integration not configured. Use ?simulate=1 for testing.",
         upgradeUrl: "/pricing",
       });
+      return;
     }
 
-    return res.status(501).json({
+    res.status(501).json({
       error: "Stripe integration not configured. Use ?simulate=1 for testing.",
       upgradeUrl: "/pricing",
     });

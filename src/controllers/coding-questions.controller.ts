@@ -19,7 +19,8 @@ export async function getQuestion(req: Request, res: Response, next: NextFunctio
     const id = req.params.id as string;
     const question = await codingQuestionsService.getQuestionById(id);
     if (!question) {
-      return res.status(404).json({ error: "Question not found" });
+      res.status(404).json({ error: "Question not found" });
+      return;
     }
     res.json(question);
   } catch (error) {

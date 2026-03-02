@@ -1,0 +1,64 @@
+# Backend-only Cloud Build — build image and deploy to Cloud Run (Mumbai / asia-south1).
+# Run from repo root so workspace includes backend/:
+#   gcloud builds submit --config=backend/cloudbuild.yaml .
+# Uses BUILD_ID for image tag (always set; COMMIT_SHA is only set for trigger-based builds).
+
+substitutions:
+  _REGION: asia-south1
+  _SERVICE_NAME: interview-ai-api
+  _REPO_NAME: cloud-run-source-deploy
+
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: ensure-arf-repo
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        gcloud artifacts repositories describe ${_REPO_NAME} --location=${_REGION} 2>/dev/null ||
+        gcloud artifacts repositories create ${_REPO_NAME} --repository-format=docker --location=${_REGION} --description="Cloud Run source deploy"
+    waitFor: ['-']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-backend
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'
+      - '-f'
+      - 'backend/Dockerfile'
+      - 'backend'
+    waitFor: ['ensure-arf-repo']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-backend
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
+    waitFor: ['build-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-backend
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--cpu-boost'
+    waitFor: ['push-backend']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'

@@ -69,7 +69,7 @@ export async function createOrder(
 
   return {
     orderId: order.id,
-    amount: order.amount,
+    amount: Number(order.amount),
     currency: order.currency,
     keyId: KEY_ID!,
   };
@@ -101,14 +101,18 @@ export async function verifyPayment(
   if (!match) {
     throw new BadRequestError("Invalid order receipt.");
   }
-  const [, userId, plan] = match;
+  const userId = match[1];
+  const plan = match[2];
+  if (!userId || !plan) {
+    throw new BadRequestError("Invalid order receipt.");
+  }
 
   const config = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG];
   if (!config || config.currency !== "INR") {
     throw new BadRequestError("Invalid plan in order.");
   }
 
-  const amountPaid = order.amount;
+  const amountPaid = Number(order.amount);
   const pack = await creditsService.createPack(
     userId,
     plan as PlanTier,

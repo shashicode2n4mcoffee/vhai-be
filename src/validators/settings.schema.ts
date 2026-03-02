@@ -23,6 +23,8 @@ export const updateSettingsSchema = z.object({
   livekitScreenShareEnabled: z.boolean().optional(),
   /** Dispatch LiveKit Agent to room (requires LIVEKIT_AGENT_NAME) */
   livekitAgentEnabled: z.boolean().optional(),
+  /** Optimized 500-char resume summary (name + skills) from uploaded PDF/DOCX */
+  resumeSummary: z.string().max(600).optional().nullable(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

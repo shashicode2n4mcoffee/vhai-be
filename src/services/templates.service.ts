@@ -23,6 +23,7 @@ export async function createTemplate(
       candidateOffers: input.candidateOffers,
       isPublic: input.isPublic,
     },
+    include: { creator: { select: { id: true, name: true } } },
   });
 }
 

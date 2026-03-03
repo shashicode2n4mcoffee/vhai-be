@@ -6,6 +6,8 @@ export const createTemplateSchema = z.object({
   customerWants: z.string().min(1, "Customer wants is required").max(5000),
   candidateOffers: z.string().min(1, "Candidate offers is required").max(5000),
   isPublic: z.boolean().optional().default(false),
+  /** True when created via "Custom" in interview flow; only custom templates can be edited by creator */
+  isCustom: z.boolean().optional().default(false),
 });
 
 export const updateTemplateSchema = createTemplateSchema.partial();

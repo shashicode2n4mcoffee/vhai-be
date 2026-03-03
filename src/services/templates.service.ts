@@ -22,6 +22,7 @@ export async function createTemplate(
       customerWants: input.customerWants,
       candidateOffers: input.candidateOffers,
       isPublic: input.isPublic,
+      isCustom: input.isCustom ?? false,
     },
     include: { creator: { select: { id: true, name: true } } },
   });
@@ -82,28 +83,31 @@ export async function getTemplateById(id: string) {
 export async function updateTemplate(
   id: string,
   userId: string,
-  role: Role,
+  _role: Role,
   input: UpdateTemplateInput,
 ) {
   const template = await prisma.interviewTemplate.findUnique({ where: { id } });
   if (!template) throw new NotFoundError("Template not found");
 
-  if (template.creatorId !== userId && role !== "ADMIN") {
-    throw new ForbiddenError("You can only edit your own templates");
+  // Only the creator can edit, and only if it is their custom template (pre-built/org templates are read-only)
+  if (template.creatorId !== userId || !template.isCustom) {
+    throw new ForbiddenError("You can only edit your own custom templates. Other templates are read-only.");
   }
 
+  const { isCustom: _omit, ...safeInput } = input as UpdateTemplateInput & { isCustom?: boolean };
   return prisma.interviewTemplate.update({
     where: { id },
-    data: input,
+    data: safeInput,
   });
 }
 
-export async function deleteTemplate(id: string, userId: string, role: Role) {
+export async function deleteTemplate(id: string, userId: string, _role: Role) {
   const template = await prisma.interviewTemplate.findUnique({ where: { id } });
   if (!template) throw new NotFoundError("Template not found");
 
-  if (template.creatorId !== userId && role !== "ADMIN") {
-    throw new ForbiddenError("You can only delete your own templates");
+  // Only the creator can delete, and only their custom template (pre-built/org templates are read-only)
+  if (template.creatorId !== userId || !template.isCustom) {
+    throw new ForbiddenError("You can only delete your own custom templates. Other templates are read-only.");
   }
 
   await prisma.interviewTemplate.delete({ where: { id } });

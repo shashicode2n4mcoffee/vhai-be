@@ -169,6 +169,8 @@ model InterviewTemplate {
   customerWants  String
   candidateOffers String
   isPublic       Boolean  @default(false)
+  /** True when created via "Custom" in interview flow; only these can be edited by creator */
+  isCustom       Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

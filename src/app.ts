@@ -23,10 +23,22 @@ const app = express();
 // ── Security Middleware ──────────────────────────────────
 app.use(helmet());
 const allowedOrigins = env.FRONTEND_URL.split(",").map((s) => s.trim()).filter(Boolean);
+/** Allow origin if in FRONTEND_URL list, or in production allow Firebase Hosting (*.web.app, *.firebaseapp.com) */
+function corsOrigin(origin: string | undefined, cb: (err: Error | null, allow?: boolean | string) => void) {
+  if (!origin) return cb(null, true);
+  if (allowedOrigins.includes(origin)) return cb(null, true);
+  if (
+    env.NODE_ENV === "production" &&
+    (origin.endsWith(".web.app") || origin.endsWith(".firebaseapp.com"))
+  ) {
+    return cb(null, true);
+  }
+  return cb(null, false);
+}
 app.use(cors({
-  origin: allowedOrigins.length > 1 ? allowedOrigins : allowedOrigins[0] ?? env.FRONTEND_URL,
+  origin: corsOrigin,
   credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 

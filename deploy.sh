@@ -32,8 +32,8 @@ if ! gcloud artifacts repositories describe "$REPO_NAME" --location="$REGION" &>
 fi
 
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo latest)"
-echo "Building backend image: $IMAGE"
-docker build -t "$IMAGE" -f "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR"
+echo "Building backend image: $IMAGE (linux/amd64 for Cloud Run)"
+docker build --platform linux/amd64 -t "$IMAGE" -f "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR"
 
 echo "Configuring Docker for Artifact Registry..."
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
